@@ -1,0 +1,32 @@
+Source: Rate My Professors
+Professor: Slobodan Vucetic
+Department: Computer & Information Sciences, Temple University
+URL: https://www.ratemyprofessors.com/professor/1080367
+Collected: 2026-06-10
+
+Overall rating: 4.0/5
+Would take again: 60%
+Level of difficulty: 3.8/5
+Rating distribution: Awesome 6, Great 1, Good 1, OK 0, Awful 1
+
+Student reviews:
+
+[CIS5526 | Jan 12, 2024 | Quality 5.0 | Difficulty 2.0]
+He is so cool and so bald.
+Tags: Amazing lectures, Inspirational, Respected
+
+[CIS3715 | Jun 2, 2020 | Quality 3.0 | Difficulty 4.0 | Grade A]
+He's a really nice guy, but this class is rough. Lab assignments always took an excessive amount of time.
+Tags: Lots of homework, Lecture heavy
+
+[CIS3715 | May 2, 2019 | Quality 5.0 | Difficulty 3.0 | Grade A]
+This class was very difficult, but also taught me a lot about data science.
+Tags: Amazing lectures, Lecture heavy
+
+[CIS5526 | May 2, 2019 | Quality 5.0 | Difficulty 4.0 | Grade A]
+Slobodan is an amazing professor. The homework are difficult, but he curves the class.
+Tags: Respected, Lots of homework, Amazing lectures
+
+[CIS8526 | Oct 2, 2018 | Quality 1.0 | Difficulty 5.0]
+Homework is killing you and unbelievably heavy. Tough grader if you have a tiny mistake.
+Tags: Tough Grader, Lots of homework, Test heavy

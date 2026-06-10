@@ -1,0 +1,27 @@
+Source: Rate My Professors
+Professor: Richard Beigel
+Department: Computer & Information Sciences, Temple University
+URL: https://www.ratemyprofessors.com/professor/810741
+Collected: 2026-06-10
+
+Overall rating: 1.9/5 (81 ratings)
+Would take again: 24%
+Level of difficulty: 3.7/5
+Rating distribution: Awesome 10, Great 6, Good 6, OK 11, Awful 49
+
+Student reviews:
+
+[CIS2033 | May 6, 2026 | Quality 2.0 | Difficulty 3.0 | Grade C | Would take again: Yes]
+You can "play the game" to pass via consistent weekly quizzes using a power mean formula.
+
+[CIS1166 | Dec 18, 2025 | Quality 1.0 | Difficulty 1.0 | Grade A+ | Mandatory attendance]
+He scrolls through 50 page google docs and highlights with his cursor.
+
+[CIS2033 | Dec 16, 2025 | Quality 1.0 | Difficulty 4.0 | Grade A+ | Mandatory attendance]
+This guy couldn't teach a fish how to swim, but grades reward structure mastery.
+
+[CIS1166 | May 16, 2025 | Quality 4.0 | Difficulty 5.0 | Grade A | Mandatory attendance | Would take again: Yes]
+Passionate about discrete math but is not passionate about answering questions.
+
+[CIS2033 | Apr 27, 2025 | Quality 5.0 | Difficulty 3.0 | Mandatory attendance | Would take again: Yes]
+100+ quizzes with unlimited retakes till end of semester.

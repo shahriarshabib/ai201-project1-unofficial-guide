@@ -1,0 +1,27 @@
+Source: Rate My Professors
+Professor: Andrew Rosen
+Department: Computer & Information Sciences, Temple University
+URL: https://www.ratemyprofessors.com/professor/2173472
+Collected: 2026-06-10
+
+Overall rating: 4.5/5 (72 ratings)
+Would take again: 92%
+Level of difficulty: 2.6/5
+Rating distribution: Awesome 54, Great 11, Good 1, OK 3, Awful 3
+
+Student reviews:
+
+[CIS1051 | Oct 29, 2025 | Quality 5.0 | Difficulty 3.0]
+One of the best professors at Temple! Hilarious how he cracks himself up during lectures. Is understanding, fair, and wants everyone to succeed!
+
+[CIS1051 | Apr 29, 2025 | Quality 5.0 | Difficulty 2.0 | Grade A+]
+Dr. Rosen truly wants the best for his students. Grading was not nearly as hard as I thought it would be, with lots of easy assignments and extra credit.
+
+[CIS2168 | Apr 18, 2025 | Quality 5.0 | Difficulty 2.0 | Grade A+]
+Rosen will accommodate for almost any issue if you speak to him early enough. Great prof and guy.
+
+[CIS1051 | Mar 28, 2025 | Quality 1.0 | Difficulty 3.0 | Grade C]
+He is very disorganized. He doesn't let you know what you are doing in class. Not the best comp sci teacher.
+
+[CIS1051 | Dec 22, 2024 | Quality 5.0 | Difficulty 2.0 | Grade B+]
+Rosen is what other professors should strive to be. He has a great approach to teaching, and I felt like I learned a lot.

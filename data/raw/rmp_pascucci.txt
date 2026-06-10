@@ -1,0 +1,27 @@
+Source: Rate My Professors
+Professor: Christopher Pascucci
+Department: Computer & Information Sciences, Temple University
+URL: https://www.ratemyprofessors.com/professor/995042
+Collected: 2026-06-10
+
+Overall rating: 3.5/5 (105 ratings)
+Would take again: 47%
+Level of difficulty: 3.7/5
+Rating distribution: Awesome 45, Great 18, Good 11, OK 9, Awful 22
+
+Student reviews:
+
+[CIS3309 | May 1, 2026 | Quality 2.0 | Difficulty 5.0]
+He clearly knows the subject, but it doesn't translate well to completing the actual work. Minimal guidance in demos and discouraging feedback.
+
+[CIS3342 | Jan 13, 2026 | Quality 5.0 | Difficulty 5.0]
+I learned the most from this professor and course than any other my entire college education. I was hired based on class project work.
+
+[CIS3342 | Dec 20, 2025 | Quality 1.0 | Difficulty 5.0]
+Very hard course with an even harder grader. Time management is more critical than material mastery.
+
+[CIS3342 | Dec 15, 2025 | Quality 4.0 | Difficulty 5.0]
+Most amount of work I had ever done at Temple. Success requires consistent effort and office hour attendance.
+
+[CIS3309 | Dec 13, 2025 | Quality 4.0 | Difficulty 4.0]
+He is always willing to help! Emphasis on attendance, integrity, and avoiding AI assistance.

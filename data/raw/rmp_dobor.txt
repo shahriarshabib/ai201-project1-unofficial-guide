@@ -1,0 +1,32 @@
+Source: Rate My Professors
+Professor: David Dobor
+Department: Computer & Information Sciences, Temple University
+URL: https://www.ratemyprofessors.com/professor/2206996
+Collected: 2026-06-10
+
+Overall rating: 3.3/5 (55 ratings)
+Would take again: 55%
+Level of difficulty: 3.4/5
+Rating distribution: Awesome 23, Great 5, Good 5, OK 8, Awful 14
+
+Student reviews:
+
+[CIS2168 | Mar 22, 2026 | Quality 1.0 | Difficulty 5.0 | Grade C-]
+Compared to other Data Structures professors, I wouldn't choose this class again. The professor is very strict about small things like how you answer questions, which can feel uncomfortable.
+Tags: Lots of homework, Lecture heavy, Test heavy
+
+[CIS2166 | Feb 19, 2026 | Quality 3.0 | Difficulty 4.0]
+Goes straight off of the textbook and only likes it if you answer based off how he teaches. If you try to answer a question in your own way he thinks you just searched it up.
+Tags: Tough grader, Participation matters, Lecture heavy
+
+[CIS2168 | Jan 20, 2026 | Quality 1.0 | Difficulty 4.0 | Drop/Withdrawal]
+Drink 3 coffees before class and you will be fine. The exams weren't hard but he is very overwhelming as a professor!
+Tags: Tough grader, Participation matters, Lecture heavy
+
+[CIS2168 | Dec 27, 2025 | Quality 5.0 | Difficulty 3.0 | Grade A-]
+One of my favorite professors ever. Professor Dobor is very passionate, very funny and means well. I understand the hate for him since his teaching style is not for everyone.
+Tags: Participation matters, Hilarious
+
+[CIS2033 | Jun 26, 2025 | Quality 2.0 | Difficulty 4.0 | Grade C]
+He is a good person but not my favorite professor. He is very strict on everything and not chill at all.
+Tags: Tough grader, Participation matters, Lots of homework

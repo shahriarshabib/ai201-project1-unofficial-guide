@@ -1,0 +1,26 @@
+Source: Rate My Professors
+Professor: Justin Yuan Shi
+Department: Computer & Information Sciences, Temple University
+URL: https://www.ratemyprofessors.com/professor/1031508
+Collected: 2026-06-10
+
+Overall rating: 3.2/5 (29 ratings)
+Would take again: 60%
+Level of difficulty: 3.7/5
+
+Student reviews:
+
+[CIS3207 | May 9, 2025 | Quality 3.0 | Difficulty 3.0]
+Not the worst, it started getting bad upon reaching tuple space and the final project, but he is very helpful if you go to his office hours.
+
+[CIS3207 | May 1, 2025 | Quality 3.0 | Difficulty 4.0 | Grade A-]
+He's not too bad, but you should take advantage of his office hours. If you're stuck, he will do his best to get you on the right track.
+
+[CIS3238 | Apr 26, 2025 | Quality 2.0 | Difficulty 5.0]
+Seems like he knows what he's talking about, but he can't teach. Doesn't seem like a terrible guy but it seems like there was a lot of shared frustration from students.
+
+[CIS3207 | Apr 24, 2025 | Quality 1.0 | Difficulty 5.0 | Online]
+I was showing other people who took this class previously what he was doing and they were horrified.
+
+[CIS3207 | Apr 24, 2025 | Quality 1.0 | Difficulty 4.0 | Grade B | Online]
+One of the most disorganized CS professors I've taken. Repeats the same thing over and over for months.
