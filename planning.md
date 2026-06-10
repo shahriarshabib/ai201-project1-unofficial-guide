@@ -46,11 +46,15 @@ Each source is one Rate My Professors faculty page, collected verbatim (aggregat
      numbers fit the structure of your documents.
      A review-heavy corpus warrants different chunking than a long FAQ. -->
 
-**Chunk size:** 300-400 tokens (~1000-1200 characters)
+**Chunk size:** One student review per chunk — a *semantic unit*, not a fixed length. Each review runs ~1–3 sentences (~40–120 tokens / ~150–450 characters). A separate "professor summary" chunk per file holds the aggregate stats (overall rating, would-take-again %, difficulty, rating distribution). A 512-token hard cap acts as a safety splitter in case any single review is unexpectedly long. Result: ~6 chunks per file (5 reviews + 1 summary) × 10 files ≈ **55–60 chunks total**.
 
-**Overlap:** 50 tokens (~200 characters)
+**Overlap:** 0 tokens (none).
 
-**Reasoning:** Your corpus is a mix of short RateMyProfessors reviews (often 1-3 paragraphs) and longer Reddit threads and student guides. 300-400 tokens provides enough context to capture a complete thought (e.g., one professor's teaching style or a specific course tip) while avoiding excessive redundancy. Reddit threads benefit from some overlap to preserve context across sentence boundaries, especially for opinion statements that reference earlier discussion.
+**Reasoning:** Every document here is a *collection of short, independent reviews* separated by a `[CIS#### | date | Quality | Difficulty]` header line — not continuous prose. The natural semantic unit is a single review, so I split on those header lines rather than on a fixed character count.
+
+- **Why not fixed-size 300–400-token chunks?** Each review is ~40–120 tokens, so a 300–400-token window would pack 3–5 *different students' opinions* — often contradictory ("one of the best" next to "RUNNNNN don't take this class") — into one chunk. Retrieval would then return a blob where the model can't tell whose opinion is whose, and similarity scores get muddied by averaging opposing sentiment.
+- **Why 0 overlap?** Overlap exists to rescue a fact whose meaning flows *across* a boundary in continuous prose. Reviews don't flow into each other — review N+1 doesn't continue review N's thought — so overlap would just bleed one student's words into a neighbor's chunk, creating false attribution. The job overlap normally does (preserving context) is instead handled structurally: **each chunk is prefixed with the professor name + course code(s)**, so a chunk like "RUNNNNN don't take this class" still carries "Nancy Polychronopoulou — CIS2109" and is self-describing on its own.
+- **How I'd know it's wrong:** *Too large* → answers about one professor leak quotes about another, or "best professor" returns a chunk mixing 4.5★ and 1.9★ profs. *Too small* (e.g., splitting a review mid-sentence) → retrieval returns a dangling fragment ("but he curves the class") with no subject. One-review-per-chunk avoids both.
 
 ---
 
@@ -62,11 +66,15 @@ Each source is one Rate My Professors faculty page, collected verbatim (aggregat
      would you weigh in choosing a different embedding model — context length, multilingual
      support, accuracy on domain-specific text, latency? -->
 
-**Embedding model:** all-MiniLM-L6-v2 (via sentence-transformers)
+**Embedding model:** `sentence-transformers/all-MiniLM-L6-v2` — 384-dimensional, runs locally on CPU, free, and its 256-token input limit comfortably fits my ~40–120-token review chunks. It's a strong default for short English text and needs no API key, which keeps the whole retrieval side offline.
 
-**Top-k:** 4
+**Top-k:** 5. Most of my test questions are *professor-specific* ("what do students say about Dobor?"), and each professor has 5 review chunks + 1 summary chunk. k=5 surfaces several reviews for the target professor so the model sees the spread of opinion (not just one outlier), while staying small enough that off-topic chunks rarely sneak in.
+- *Too few (k=1–2):* a single review can be an outlier — pulling only the 1★ "RUNNNNN" review for a professor who's actually mixed would give a misleading answer.
+- *Too many (k=15):* for a question about one professor, the extra chunks are necessarily *other* professors, diluting context and inviting the model to wander off-topic.
 
-**Production tradeoff reflection:** For real deployment, I'd prioritize domain-specific accuracy over speed/cost. A fine-tuned model like instructor-large or Cohere's embed-english-v3.0 would improve retrieval quality by better understanding professor names and course-specific jargon (e.g., "weeder courses"). The 4-chunk default balances: getting multiple student perspectives on the same topic while staying under latency limits. If cost allowed, retrieval could increase to 6-8 chunks and implement re-ranking to surface the most relevant reviews first.
+**Why semantic search works here:** the query "is this class a lot of work?" never contains the word "homework," yet MiniLM maps both into nearby vectors because they co-occur in similar contexts in its training data. That's the point of embeddings over keyword search — it matches *meaning*, so "heavy workload," "lots of homework," and "took 4–6 hours" all retrieve for a workload question even with zero shared words.
+
+**Production tradeoff reflection:** If cost weren't a constraint, I'd weigh: **(1) domain accuracy** — a larger model like `text-embedding-3-large` or Cohere `embed-english-v3.0` better distinguishes professor names and CIS course jargon, reducing the risk that two profs with similar review text collapse together; **(2) context length** — irrelevant here (chunks are tiny) but it would matter if I added long Reddit guides; **(3) latency** — MiniLM is ~milliseconds locally vs. a network round-trip per query for an API model; **(4) multilingual** — not needed for an English-only Temple corpus. Given my data is short, opinionated, English review text, MiniLM is the right pick; I'd only upgrade if evaluation showed retrieval confusing similar professors, and I'd pair the upgrade with a re-ranking pass before spending on a bigger embedder.
 
 ---
 
@@ -77,13 +85,15 @@ Each source is one Rate My Professors faculty page, collected verbatim (aggregat
      is right or wrong. "What are good dining halls?" is too vague.
      "What do students say about wait times at [dining hall name] during lunch?" is testable. -->
 
-| # | Question | Expected answer |
+Each question maps to a specific source file so a grader can check the system's answer against the ground-truth reviews.
+
+| # | Question | Expected answer (checkable against) |
 |---|----------|-----------------|
-| 1 | Which CS professors at Temple are considered the best by students? | Names of professors frequently recommended in Reddit discussions and RMP reviews with reasons (engaging teaching, fair grading, helpful) |
-| 2 | What should I know before taking Intro to CS? | Common tips about workload, prerequisites, study strategies, and professor-specific advice from student guides |
-| 3 | How difficult is the Data Structures course? | Student reports on difficulty level, time commitment, grading practices, and specific professor comparisons |
-| 4 | What is the overall CS major workload like at Temple? | General difficulty/workload assessment compared to other majors, time commitment expectations, and course progression advice |
-| 5 | What are students saying about [specific professor name]'s teaching style? | Consolidated feedback from RMP and Reddit on grading, clarity, approachability, and course difficulty |
+| 1 | Which Temple CS professor do students most recommend, and why? | **Andrew Rosen** — highest rating in the corpus (4.5★, 92% would take again). Praised as understanding, fair, funny ("cracks himself up"), wants everyone to succeed; grading easier than expected with extra credit (CIS1051/CIS2168). *(rmp_rosen.txt)* |
+| 2 | How heavy is the workload in Christopher Pascucci's web-dev courses (CIS3309/3342)? | **Very heavy.** Difficulty rated 4–5/5 on nearly every review; "most amount of work I had ever done at Temple"; time management called more critical than mastery; office-hours attendance important. Mixed payoff — some say they learned the most and got hired off the project work. *(rmp_pascucci.txt)* |
+| 3 | What do students say about taking Data Structures (CIS2168) with David Dobor? | **Divisive** (3.3★, 55% would take again). Strict about *how* you phrase answers, lecture/test-heavy, lots of homework, "overwhelming"; but fans call him passionate, funny, a favorite — "his teaching style is not for everyone." *(rmp_dobor.txt)* |
+| 4 | Is Richard Beigel's class hard, and how is the grade determined? | Low overall (1.9★) and seen as a weak lecturer ("couldn't teach a fish how to swim," "scrolls through 50-page google docs"), but the grade is **quiz-driven**: 100+ weekly quizzes with unlimited retakes and a power-mean formula, so you can "play the game" to pass; attendance mandatory. *(rmp_beigel.txt)* |
+| 5 | Which intro-level CS professor do reviews warn beginners about? | **Hani Karam** for CIS1057 — a review states plainly "Not recommended for beginners"; tough grader, lectures described as uninteresting / "watch videos," "extremely unempathetic." (One dissenting review calls him fair but difficult.) *(rmp_karam.txt)* |
 
 ---
 
@@ -93,52 +103,53 @@ Each source is one Rate My Professors faculty page, collected verbatim (aggregat
      Consider: noisy or inconsistent documents, missing source attribution, off-topic
      retrieval, chunks that split key information across boundaries. -->
 
-1. **Outdated or conflicting information across sources.** RMP reviews span multiple years and professors may teach differently now. Student advice might reference old prerequisite structures. Multiple chunks retrieved may contradict each other (e.g., "Professor X is easy" vs. "Professor X grades harshly"), making summarization difficult. Mitigation: Include date/source metadata in chunks; prioritize recent reviews.
+1. **Genuinely contradictory reviews for the same professor.** This is intrinsic to the data, not noise: Dobor is "one of my favorite professors ever" *and* "I wouldn't choose this class again" in the same file; Beigel has 10 Awesome and 49 Awful ratings. If retrieval happens to pull only one polarity, the answer misrepresents the consensus. *Mitigation:* attach `quality`, `difficulty`, and the per-professor `overall_rating`/`would_take_again` as chunk metadata; include the aggregate "summary" chunk so the model can frame individual quotes against the overall score; set top-k=5 so multiple opinions surface together; instruct the LLM to acknowledge disagreement rather than pick a side.
 
-2. **Off-topic retrieval for vague queries.** Queries like "best professor" or "hard class" are ambiguous — the system might retrieve reviews about difficulty when the user wants grading style, or retrieve unrelated courses with similar names. Reddit discussions often go off-topic. Mitigation: Chunk document sections clearly with headers; use top-k=4 to include multiple perspectives and filter noisy results.
+2. **Cross-professor leakage on broad queries.** A vague query like "is CS hard at Temple?" has no single subject, so semantic search may return chunks from several professors and the model could blur them into one false claim ("the professor is disorganized") without saying *which* professor. Several profs also share course codes (CIS2033 appears for Dobor, Wang, and Beigel), inviting confusion. *Mitigation:* prefix every chunk with its professor name + course code so attribution travels with the text; require the generation prompt to name the professor for each claim; surface source filenames/URLs in the answer.
 
-3. **Chunks that split key information.** A single professor's review might span 200+ tokens; chunking at 300 tokens could split one review across boundaries, making it unclear which opinions belong to which professor. Mitigation: Preserve document boundaries when possible; ensure overlap captures professor names and course titles.
+3. **Missing-coverage questions answered from thin air (hallucination).** The corpus is RMP-only and professor-centric. Questions it can't answer — "which dorm is near the CS building?", "what's the average CS starting salary?", or any professor not among the 10 collected — risk the LLM inventing a plausible response. *Mitigation:* a strict grounding system prompt that forbids using outside knowledge and instructs the model to reply "the reviews I have don't cover that" when retrieved chunks are off-topic; optionally drop chunks below a similarity threshold before generation.
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│  DOCUMENT INGESTION                                                 │
-│  Load .txt files from data/raw/ directory                          │
-│  (Reddit threads, RMP reviews, student advice guides)              │
-└──────────────────────┬──────────────────────────────────────────────┘
-                       ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  CHUNKING                                                           │
-│  LangChain RecursiveCharacterTextSplitter                           │
-│  chunk_size=300-400 tokens | chunk_overlap=50 tokens               │
-└──────────────────────┬──────────────────────────────────────────────┘
-                       ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  EMBEDDING + VECTOR STORE                                           │
-│  Embedding: sentence-transformers/all-MiniLM-L6-v2                 │
-│  Vector Store: FAISS (in-memory) or Pinecone (cloud)               │
-│  Store: chunk_id, text, metadata (source, date)                    │
-└──────────────────────┬──────────────────────────────────────────────┘
-                       ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  RETRIEVAL                                                          │
-│  Input: User query (e.g., "best CS professors at Temple")           │
-│  Embed query with same model                                        │
-│  Similarity search: retrieve top-k=4 chunks                         │
-└──────────────────────┬──────────────────────────────────────────────┘
-                       ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│  GENERATION (Optional)                                              │
-│  Pass retrieved chunks + query to LLM (Claude, GPT-4)               │
-│  Prompt: Synthesize student perspectives into concise answer        │
-│  Output: Natural language response with source attribution          │
-└─────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────┐
+│  1. DOCUMENT INGESTION                          [ Python stdlib ]       │
+│  Read all data/raw/rmp_*.txt files; parse the header block (professor,  │
+│  course, URL, aggregate stats) and the list of individual reviews.      │
+└───────────────────────────────┬───────────────────────────────────────┘
+                                ▼
+┌───────────────────────────────────────────────────────────────────────┐
+│  2. CHUNKING                          [ custom delimiter splitter ]     │
+│  Split on the `[CIS#### | date | ...]` review header → ONE review =     │
+│  ONE chunk. 0 overlap. Prefix each chunk with "Professor — course".     │
+│  Emit 1 summary chunk/file from the aggregate stats. (~55–60 chunks)    │
+└───────────────────────────────┬───────────────────────────────────────┘
+                                ▼
+┌───────────────────────────────────────────────────────────────────────┐
+│  3. EMBEDDING + VECTOR STORE   [ all-MiniLM-L6-v2 + ChromaDB (local) ]  │
+│  Embed each chunk (384-dim) with sentence-transformers; persist to a    │
+│  Chroma collection with metadata: professor, course_codes, source_url,  │
+│  date, quality, difficulty, overall_rating, chunk_type(review|summary). │
+└───────────────────────────────┬───────────────────────────────────────┘
+                                ▼
+┌───────────────────────────────────────────────────────────────────────┐
+│  4. RETRIEVAL                  [ ChromaDB similarity search ]           │
+│  Embed the user query with the SAME model; cosine-similarity search;    │
+│  return top-k = 5 chunks (text + metadata).                             │
+└───────────────────────────────┬───────────────────────────────────────┘
+                                ▼
+┌───────────────────────────────────────────────────────────────────────┐
+│  5. GENERATION                 [ Groq API — llama-3.3-70b-versatile ]   │
+│  Grounded system prompt: answer ONLY from the retrieved reviews, name   │
+│  the professor for each claim, cite source, say "the reviews don't      │
+│  cover that" if unsupported. Surfaced via CLI (Milestone 5; Streamlit   │
+│  optional). Output: grounded answer + source attribution.               │
+└───────────────────────────────────────────────────────────────────────┘
 ```
-     You can use ASCII art, a Mermaid diagram, or embed a sketch as an image.
-     You'll use this diagram as context when prompting AI tools to implement each stage. -->
+
+> Note: the diagram reflects the stack pinned in `requirements.txt` — `sentence-transformers`, `chromadb`, `groq`, `python-dotenv`. No LangChain (chunking is a small custom function); embeddings/vector store run locally, only generation calls an API (Groq, free key).
 
 ---
 
@@ -154,8 +165,22 @@ Each source is one Rate My Professors faculty page, collected verbatim (aggregat
      "I'll give Claude my Chunking Strategy section and ask it to implement chunk_text()
      with my specified chunk size and overlap" is a plan. -->
 
-**Milestone 3 — Ingestion and chunking:**
+I'm using **Claude (Claude Code)** as the primary coding assistant. For each milestone I give it the relevant planning.md section plus one real sample file so the generated code matches my actual data format, then verify against a concrete check.
 
-**Milestone 4 — Embedding and retrieval:**
+**Milestone 3 — Ingestion and chunking**
+- *Tool:* Claude.
+- *Input I give it:* the **Documents** section + the full text of one file (e.g. `data/raw/rmp_dobor.txt`) so it sees the exact `Source:/Professor:/URL:` header and `[CIS#### | date | Quality | Difficulty]` review format, plus my **Chunking Strategy** section.
+- *What I expect it to produce:* `load_documents(dir)` that parses each file into `{header_metadata, [reviews]}`, and `chunk_reviews(doc)` that emits one chunk per review (prefixed with "Professor — course") plus one summary chunk, returning `{text, metadata}` dicts. Explicitly **not** a fixed-size splitter.
+- *How I verify:* total chunk count is ~55–60; print 5 random chunks and confirm none mixes two professors and none is a mid-sentence fragment.
 
-**Milestone 5 — Generation and interface:**
+**Milestone 4 — Embedding and retrieval**
+- *Tool:* Claude.
+- *Input I give it:* my **Retrieval Approach** section + the chunk dict schema from M3.
+- *What I expect it to produce:* `build_index(chunks)` that embeds with `all-MiniLM-L6-v2` and upserts into a persistent ChromaDB collection with my metadata fields; `retrieve(query, k=5)` that embeds the query with the same model and returns the top-5 chunks with text + metadata + distances.
+- *How I verify:* run my 5 evaluation questions through `retrieve()` and confirm the top chunks are the expected professor's reviews (e.g. Q3 returns Dobor/CIS2168 chunks, not Beigel's).
+
+**Milestone 5 — Generation and interface**
+- *Tool:* Claude.
+- *Input I give it:* my **Anticipated Challenges** mitigations (grounding rules) + the retrieval output shape, and the note that `requirements.txt` pins `groq`.
+- *What I expect it to produce:* `answer(query)` that calls `retrieve()`, formats the chunks into a context block, sends them with a strict grounding system prompt to a Groq chat model (`llama-3.3-70b-versatile`), and returns the answer with per-claim professor names + source citations; plus a simple CLI loop (`while` reading stdin).
+- *How I verify:* run all 5 eval questions and score them in the README's Evaluation Report; deliberately ask an out-of-corpus question ("which dorm is closest to campus?") and confirm it answers "the reviews I have don't cover that" instead of hallucinating.
