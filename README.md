@@ -95,6 +95,17 @@ plain text, so this is mostly defensive for future messier sources.)
 **Final chunk count:** **60 chunks** (50 reviews + 10 summaries), verified self-contained,
 0 empty, 144–336 characters each.
 
+### Sample chunks (5, each labeled with its source document)
+
+1. **`rmp_rosen.txt`** (review) — *Andrew Rosen (CIS1051, RateMyProfessors review, Oct 29, 2025 — Quality 5.0/5, Difficulty 3.0/5): One of the best professors at Temple! Hilarious how he cracks himself up during lectures. Is understanding, fair, and wants everyone to succeed!*
+2. **`rmp_pascucci.txt`** (review) — *Christopher Pascucci (CIS3309, RateMyProfessors review, May 1, 2026 — Quality 2.0/5, Difficulty 5.0/5): He clearly knows the subject, but it doesn't translate well to completing the actual work. Minimal guidance in demos and discouraging feedback.*
+3. **`rmp_beigel.txt`** (review) — *Richard Beigel (CIS2033, RateMyProfessors review, May 6, 2026 — Quality 2.0/5, Difficulty 3.0/5): You can "play the game" to pass via consistent weekly quizzes using a power mean formula.*
+4. **`rmp_karam.txt`** (review) — *Hani Karam (CIS0835, RateMyProfessors review, Apr 10, 2026 — Quality 1.0/5, Difficulty 5.0/5): Group project heavy. Tags: Tough grader, Group projects, Graded by few things*
+5. **`rmp_wang.txt`** (summary) — *Pei Wang — overall RateMyProfessors summary (CIS2033/CIS5511): overall rating 2.4/5 (23 ratings), would take again 24%, difficulty 3.4/5. Rating distribution: Awesome 3, Great 2, Good 5, OK 6, Awful 7.*
+
+Each review chunk is self-contained: it names the professor, course, date, and ratings, so it
+answers a question on its own without needing the neighboring chunks.
+
 ---
 
 ## Embedding Model
@@ -120,6 +131,50 @@ query for an API model; **(4) multilingual** — not needed for an English-only 
 Given short, opinionated, English review text, MiniLM is the right pick. I'd only upgrade if
 evaluation showed retrieval confusing similar professors, and I'd pair the upgrade with a
 re-ranking pass.
+
+---
+
+## Retrieval Test Results
+
+Three queries run against the ChromaDB index (`python index.py` runs this self-test).
+Distance is cosine distance — **lower is more relevant**; top-3 chunks shown.
+
+**Query 1: "Which Temple CS professor do students most recommend?"**
+| dist | source | chunk (truncated) |
+|---|---|---|
+| 0.313 | `rmp_rosen.txt` | Andrew Rosen (CIS1051 …): One of the best professors at Temple!… |
+| 0.406 | `rmp_shi.txt` | Justin Yuan Shi (CIS3207 …): One of the most disorganized… |
+| 0.427 | `rmp_rosen.txt` | Andrew Rosen (CIS1051 …): Rosen is what other professors should strive to be… |
+
+*Why these are relevant:* the top two results are both Andrew Rosen — the highest-rated
+professor in the corpus (4.5★) — and contain exactly the recommendation language the query
+asks for ("one of the best", "what other professors should strive to be"). The model matched
+*meaning*: "most recommend" maps near "one of the best" with no shared words. (The #2 result,
+Shi's *negative* review, is a known artifact — strong-sentiment reviews sit close to
+recommendation queries regardless of polarity; see the Failure Case.)
+
+**Query 2: "How heavy is Christopher Pascucci's workload?"**
+| dist | source | chunk (truncated) |
+|---|---|---|
+| 0.467 | `rmp_pascucci.txt` | Christopher Pascucci (CIS3342 …): Most amount of work I had ever done… |
+| 0.485 | `rmp_pascucci.txt` | Christopher Pascucci (CIS3342 …): Very hard course with an even harder grader… |
+| 0.515 | `rmp_pascucci.txt` | Christopher Pascucci — overall summary (CIS3309/CIS3342)… |
+
+*Why these are relevant:* all three results are Pascucci, and the top two speak directly to
+*workload* ("most amount of work I had ever done", "very hard course") even though neither
+contains the word "workload" — semantic matching connects "heavy workload" to "most amount of
+work". The third is the aggregate summary chunk, giving the model the overall difficulty
+context. No off-professor leakage.
+
+**Query 3: "What do students say about Data Structures with David Dobor?"**
+| dist | source | chunk (truncated) |
+|---|---|---|
+| 0.399 | `rmp_dobor.txt` | David Dobor (CIS2168 …): Compared to other Data Structures professors… |
+| 0.474 | `rmp_dobor.txt` | David Dobor (CIS2033 …): He is a good person but not my favorite professor… |
+| 0.485 | `rmp_dobor.txt` | David Dobor (CIS2168 …): One of my favorite professors ever… |
+
+All three are Dobor, and the top hit is his CIS2168 (Data Structures) review — the exact
+course named in the query.
 
 ---
 
@@ -152,6 +207,76 @@ Grounding is enforced in **three layers**, not left to the model's good intentio
 
 **How source attribution is surfaced:** each answer is followed by a "Retrieved from" list of
 `filename (Professor) — URL`, e.g. `rmp_dobor.txt (David Dobor) — https://…`.
+
+---
+
+## Example Responses
+
+Verbatim output from the live system (`python query.py`). Source attribution is part of the
+output text, not added by hand.
+
+**Example 1 — in-scope (workload):**
+> **Q:** How heavy is the workload in Christopher Pascucci's web development courses?
+>
+> Students say Christopher Pascucci's courses have a heavy workload, with one review stating it
+> was the "most amount of work I had ever done at Temple" (CIS3342). Another review mentions
+> that "time management is more critical than material mastery" (CIS3342), implying a
+> significant workload. However, the difficulty levels vary slightly between CIS3342
+> (Difficulty 5.0/5) and CIS3309 (Difficulty 4.0/5 or 5.0/5).
+>
+> **Retrieved from:**
+> • rmp_pascucci.txt (Christopher Pascucci) — https://www.ratemyprofessors.com/professor/995042
+
+**Example 2 — in-scope (grading):**
+> **Q:** Is Richard Beigel's class hard, and how is the grade determined?
+>
+> Students say Richard Beigel's class has a difficulty rating of 4.0/5 in one review and 3.0/5
+> in another, with an overall difficulty rating of 3.7/5. According to one review, his grading
+> reward structure masters the subject, and another review mentions 100+ quizzes with
+> unlimited retakes, which may affect the grade determination. However, there are conflicting
+> opinions about his teaching and grading style.
+>
+> **Retrieved from:**
+> • rmp_beigel.txt (Richard Beigel) — https://www.ratemyprofessors.com/professor/810741
+
+**Example 3 — out-of-scope (refusal):**
+> **Q:** What is the closest dorm to the computer science building?
+>
+> I don't have enough information on that in the student reviews I have.
+>
+> *(No chunk within threshold — best distance 0.679. The system refuses **before** calling the
+> LLM, so it cannot fabricate an answer from general knowledge.)*
+
+---
+
+## Query Interface
+
+Two interfaces share the same `ask()` backend.
+
+**Gradio web UI (`python app.py` → http://localhost:7860):**
+- **Input field:** `Your question` — a single free-text box. (Press **Ask** or hit Enter.)
+  Clickable example questions are provided.
+- **Output fields:**
+  - `Answer` — the grounded natural-language response (8-line text area).
+  - `Retrieved from` — the bullet list of source documents the answer drew on.
+
+**CLI (`python query.py`):** interactive prompt, or one-shot via `python query.py "question"`.
+
+**Sample interaction transcript (CLI):**
+```
+$ python query.py "What do students say about Data Structures with David Dobor?"
+
+Q: What do students say about Data Structures with David Dobor?
+
+Students say David Dobor's Data Structures class (CIS2168) is very strict, with one student
+stating they wouldn't choose the class again due to the professor's strictness on small things.
+However, another student had a very positive experience, calling him "one of my favorite
+professors ever" and describing him as passionate and funny. They note that his teaching style
+may not be for everyone.
+
+Retrieved from:
+  • rmp_dobor.txt (David Dobor) — https://www.ratemyprofessors.com/professor/2206996
+```
 
 ---
 
