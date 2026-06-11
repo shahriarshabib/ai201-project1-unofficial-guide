@@ -168,9 +168,18 @@ def chunk_document(doc: dict) -> list[dict]:
         ctx += "): "
         text = ctx + rev["text"]
 
+        # `embed_text` is what we vectorise: a lean "professor (course): opinion"
+        # string. We deliberately drop the date and Quality/Difficulty numbers
+        # because they are near-identical boilerplate across all 50 reviews and
+        # dilute the semantic signal of short, pointed reviews. The rich `text`
+        # above is still stored for display + the LLM. (See planning.md.)
+        embed_text = f"{professor} ({course}): {rev['text']}" if course else \
+            f"{professor}: {rev['text']}"
+
         chunks.append(
             {
                 "text": text,
+                "embed_text": embed_text,
                 "metadata": {
                     "professor": professor,
                     "course": course,
@@ -200,6 +209,7 @@ def chunk_document(doc: dict) -> list[dict]:
     chunks.append(
         {
             "text": summary_text,
+            "embed_text": summary_text,  # summary is already descriptive prose
             "metadata": {
                 "professor": professor,
                 "course": courses,
