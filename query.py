@@ -138,6 +138,8 @@ def ask(question: str, k: int = 5, threshold: float = DISTANCE_THRESHOLD) -> dic
         ],
     )
     answer = resp.choices[0].message.content.strip()
+    if not answer:  # rare: model returns an empty completion -> treat as no answer
+        answer = NO_INFO
 
     # Layer 3 — source attribution guaranteed programmatically.
     sources = [] if answer.strip() == NO_INFO else _sources_from(relevant, answer)
