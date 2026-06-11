@@ -106,20 +106,31 @@ def _sources_from(chunks: list[dict], answer: str) -> list[str]:
     return sources
 
 
-def ask(question: str, k: int = 5, threshold: float = DISTANCE_THRESHOLD) -> dict:
-    """Return {answer, sources, used_chunks} for a question, grounded in reviews."""
-    retrieved = retrieve(question, k=k)
+def ask(question: str, k: int = 5, threshold: float = DISTANCE_THRESHOLD,
+        hybrid: bool = False) -> dict:
+    """Return {answer, sources, used_chunks} for a question, grounded in reviews.
 
-    # Layer 1 — relevance gate. Keep only chunks close enough to be on-topic.
-    relevant = [c for c in retrieved if c["distance"] <= threshold]
-    if not relevant:
-        best = min((c["distance"] for c in retrieved), default=1.0)
+    hybrid=True uses BM25 + semantic fusion (hybrid.py) to choose the context,
+    which rescues rare-keyword queries the dense retriever misses (e.g. the
+    "beginners" failure case). The out-of-scope refusal gate still runs on raw
+    semantic distance, so unanswerable questions are still declined.
+    """
+    # Layer 1 — relevance gate, always on the semantic best distance.
+    semantic_top = retrieve(question, k=k)
+    best = min((c["distance"] for c in semantic_top), default=1.0)
+    if best > threshold:
         return {
             "answer": NO_INFO,
             "sources": [],
             "used_chunks": [],
             "note": f"No chunk within threshold (best distance {best:.3f}).",
         }
+
+    if hybrid:
+        from hybrid import hybrid_search
+        relevant = hybrid_search(question, k=k)
+    else:
+        relevant = [c for c in semantic_top if c["distance"] <= threshold]
 
     # Layer 2 — grounded generation.
     context = _format_context(relevant)
@@ -166,12 +177,17 @@ def main() -> None:
     except (AttributeError, ValueError):
         pass
 
-    if len(sys.argv) > 1:  # one-shot mode
-        q = " ".join(sys.argv[1:])
-        _print_result(q, ask(q))
+    args = sys.argv[1:]
+    hybrid = "--hybrid" in args
+    args = [a for a in args if a != "--hybrid"]
+    mode = "hybrid (BM25 + semantic)" if hybrid else "semantic"
+
+    if args:  # one-shot mode
+        q = " ".join(args)
+        _print_result(q, ask(q, hybrid=hybrid))
         return
 
-    print("The Unofficial Guide — Temple CS professors. "
+    print(f"The Unofficial Guide — Temple CS professors [{mode} retrieval]. "
           "Ask a question (blank line or Ctrl-C to quit).")
     while True:
         try:
@@ -181,7 +197,7 @@ def main() -> None:
             break
         if not q:
             break
-        _print_result(q, ask(q))
+        _print_result(q, ask(q, hybrid=hybrid))
 
 
 if __name__ == "__main__":

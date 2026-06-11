@@ -381,6 +381,50 @@ query. I updated planning.md to record this change.
 
 ---
 
+## Stretch Feature: Hybrid Search (BM25 + semantic)
+
+**Why:** the failure case above is a *keyword* miss — the dense embedding ignores the rare,
+decisive word "beginners." BM25 is the opposite of a dense retriever: it scores exact term
+overlap and weights rare terms heavily, but knows nothing about synonyms. Combining them covers
+both. Implemented in [hybrid.py](hybrid.py); run `python hybrid.py` to reproduce the comparison.
+
+**How the scores are combined:** for a query, every chunk is scored by both retrievers. Each
+score vector is min-max normalized to [0, 1] across the candidate set, then combined as a
+weighted sum:
+
+```
+combined = α · semantic_norm + (1 − α) · bm25_norm        (α = 0.5)
+```
+
+`semantic_norm` comes from cosine similarity (all-MiniLM-L6-v2); `bm25_norm` from BM25Okapi over
+the same lean chunk text. α=1.0 is pure semantic, α=0.0 is pure BM25.
+
+**Comparison on 3 queries** (top result per method; `sem`/`bm25`/`comb` are normalized scores):
+
+| Query | semantic-only top | BM25-only top | hybrid (α=.5) top-3 | Better |
+|---|---|---|---|---|
+| "intro-level professor warn beginners about?" | Justin Yuan Shi (wrong) | David Dobor (wrong) | Shi, Dobor, **Hani Karam/CIS1057** ✅ | **Hybrid** |
+| "how heavy is Pascucci's workload?" | Pascucci/CIS3342 ✅ | Pascucci/CIS3309 ✅ | all 3 Pascucci ✅ | tie (all correct) |
+| "Data Structures with David Dobor?" | Dobor/CIS2168 ✅ | Dobor/CIS2168 ✅ | all 3 Dobor ✅ | tie (all correct) |
+
+**Result — it fixes the failure case.** On query 1, semantic-only never retrieves Karam's
+CIS1057 review (not even in the top 10), because the dense vector is dominated by sentiment.
+BM25 catches the literal word "beginners" (bm25 score 0.90), so hybrid pulls **Hani Karam into
+the top-3** retrieved chunks. Fed through the grounded generator (`ask(question, hybrid=True)`),
+the end-to-end answer flips from wrong to correct:
+
+> **Semantic mode:** names Justin Yuan Shi (the failure).
+> **Hybrid mode:** *"Students say Hani Karam is 'Not recommended for beginners' for CIS1057."*
+> — sourced to `rmp_karam.txt`.
+
+On queries 2 and 3 both methods already succeed, and hybrid stays correct — so adding BM25 fixes
+the weak case without regressing the strong ones. The out-of-scope refusal gate (raw semantic
+distance > 0.60) still runs in hybrid mode, so "closest dorm?" is still declined.
+
+**Try it:** `python query.py --hybrid "which intro professor should beginners avoid?"`
+
+---
+
 ## Demo Video
 
 *(Add your 3–5 minute recording link here.)* The demo should show: at least 3 queries with

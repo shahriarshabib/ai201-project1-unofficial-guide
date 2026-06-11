@@ -2,6 +2,7 @@ sentence-transformers==3.4.1
 chromadb>=0.6.0
 groq==0.15.0
 python-dotenv==1.0.1
+rank-bm25>=0.2.2          # stretch feature: hybrid (BM25 + semantic) search
 
 # Query interface (Milestone 5):
 gradio>=6.9.0
