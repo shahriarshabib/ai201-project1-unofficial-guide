@@ -427,7 +427,9 @@ distance > 0.60) still runs in hybrid mode, so "closest dorm?" is still declined
 
 ## Demo Video
 
-*(Add your 3–5 minute recording link here.)* The demo should show: at least 3 queries with
-visible source citations; one query where retrieval + generation both work well (e.g. Q2,
-Pascucci workload); one where the system fails, narrated (Q5 — names Shi instead of Karam, the
-failure case above); and a walkthrough of this evaluation report.
+**▶️ [Watch the 3–5 minute demo](https://drive.google.com/file/d/1-7LjIVLybwFb4WkutKrKiYXpZJBQPame/view?usp=sharing)**
+
+The walkthrough shows: multiple queries with visible source citations; a query where retrieval
+and generation both work well (Pascucci workload); the out-of-scope refusal (grounding); the
+failure case narrated (the "beginners" query naming Shi instead of Karam); the hybrid-search fix
+that corrects it; and a walkthrough of the evaluation report.
